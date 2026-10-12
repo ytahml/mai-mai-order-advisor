@@ -29,7 +29,7 @@ python3 -m compileall -q copilot tests scripts
 
 1. 保留本目录整体结构，将其作为名为 `mai-mai-order-advisor` 的 Skill 文件夹导入支持本地 Skill 的 Agent 主机；入口是根目录 [SKILL.md](SKILL.md)。如果主机只支持指定技能目录，由你把整个文件夹放入该主机的技能目录，不只复制 SKILL.md。也可在支持读取本地文件的主机中明确要求读取本路径 SKILL.md 并遵循它。具体技能发现方式由主机决定，本项目没有修改任何全局配置。
 2. 在主机配置官方麦当劳 MCP，连接地址 `https://mcp.mcd.cn`，Streamable HTTP。真实 Token 由你在主机本地通过环境变量 `MCD_MCP_TOKEN` 提供，不发到聊天、不放项目 `.env`、不把真值写入配置文件。
-3. [mcp-config.example.json](mcp-config.example.json) 是本项目附带的脱敏配置示例，便于在支持环境变量替换的主机中试用；它不是赛事必交文件。不同主机的变量引用方式可能不同，使用前确认主机的安全注入方式，不得将真实 Token 写入配置或提交到仓库。
+3. [mcp-config.example.json](mcp-config.example.json) 是活动规则要求的脱敏配置示例，便于在支持环境变量替换的主机中试用。不同主机的变量引用方式可能不同，使用前确认主机的安全注入方式，不得将真实 Token 写入配置或提交到仓库。
 4. 确认主机可见当前工具 Schema，按 [MCP_INTEGRATION.md](MCP_INTEGRATION.md) 适配。启用主机对写工具的逐次审批。
 
 示例请求：
@@ -68,6 +68,10 @@ python3 -m compileall -q copilot tests scripts
 
 ## 参赛材料状态
 
-按[官方赛事要求](https://github.com/M-China/mcd-developer-innovation-challenge)，本地已准备 README.md、MCP_INTEGRATION.md、实际 Skill/代码和 [CONTEST_DECLARATION.md](CONTEST_DECLARATION.md)。2026-10-12 已核对声明与官方当前 raw 文本逐字节一致，详见来源记录；报名时仍需复核官方最新版本。配置示例非必交；未使用 WorkBuddy，不制作其专项记录。
+按[官方完整活动规则](https://github.com/M-China/mcd-developer-innovation-challenge/blob/63ac44e2df7dc04eb49b462741a594acfcf84232/activityGuidelines.md)，本地已准备 README.md、MCP_INTEGRATION.md、[mcp-config.example.json](mcp-config.example.json)、实际 Skill/代码和 [CONTEST_DECLARATION.md](CONTEST_DECLARATION.md)。2026-10-12 已核对声明与官方当前 raw 文本逐字节一致，详见来源记录；报名时仍需复核官方最新版本。未使用 WorkBuddy，不制作其专项记录。
 
 项目已初始化 Git、配置 origin，基础版本已发布至[公开仓库](https://github.com/ytahml/mai-mai-order-advisor)。本次同秒刷新修复、费用边界回归及配置修复/只读联调记录随当前分支提交交付。参赛报名状态尚未核验；用户报名时需自行核对并同意活动规则与声明条款。公开仓库和离线验证通过不代表真实 MCP 联调或参赛审核通过。
+
+## 许可证
+
+本项目原创代码与文档采用 [MIT 许可证](LICENSE)。官方参赛声明及引用的第三方材料保留其原有权利归属。
