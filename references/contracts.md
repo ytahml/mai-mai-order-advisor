@@ -54,6 +54,8 @@ Python：`transition(state, event, now)`；CLI：`{"state": 上次返回state, "
 | verified / verify_required | source, tool=query-order, response_ref, order_ref, matches_summary, total, status | 读回匹配后 pending_payment 或 paid；否则 status_unknown |
 | reset / browsing 或尚未发出的确认 | 无 | 撤销本地意图，不取消真实订单 |
 
+刷新要求 `completed_at < wallet_observed_at <= quote.observed_at <= now`。秒级时间无法区分同秒先后，因此即使响应引用不同，同秒刷新也拒绝。主机记录 `coupon_result` 后，等本地时钟进入下一秒再查询卡包，随后重新报价；保留实际观测时间，不能给旧响应改时间戳。仅重复只读查询，不重试领券。
+
 `payload_digest = digest(实际 create-order 参数对象)`。该摘要涵盖地址引用、餐具、预约、备注等所有实际参数。确认时主机必须展示与这些参数一致的人可读摘要；引用不能代替面向用户的具体配送选择。`matches_summary` 是主机逐项核对商品、门店、履约和券后填入，不能只比总价。状态不允许重放、回滚、并行分支；异常输出不会授权任何动作。
 
 **保证边界**：这是协作式状态机。伪造 state、伪造来源或让助手伪造用户输入都能绕过应用约定；本库不充当权限服务。主机维护可信用户事件、原子保存最新内存 state 后才发工具调用、校验当前 Schema/参数摘要、启用写工具审批。项目不提供可防篡改交易代理，也不对跨会话崩溃恢复作保证；会话丢失且可能已写入时先人工核实，不能重放。

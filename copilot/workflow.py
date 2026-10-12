@@ -70,8 +70,9 @@ def transition(state, event, now):
         required_text(event.get("wallet_response_ref"))
         wallet_time = integer(event.get("wallet_observed_at"))
         quote = validate_quote(event.get("quote"), now)
+        # Equal second timestamps cannot prove that a read followed the write.
         if (quote["source"] != state["source"] or
-                not state["completed_at"] <= wallet_time <= quote["observed_at"]):
+                not state["completed_at"] < wallet_time <= quote["observed_at"]):
             raise GateError("fresh wallet and quote required")
         state = {"phase": "browsing", "revision": state["revision"]}
         fence = {"observed_at": quote["observed_at"], "digest": digest(quote),

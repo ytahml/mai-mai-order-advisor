@@ -40,6 +40,17 @@ class WorkflowTests(unittest.TestCase):
                 self.step(action)
         self.assertEqual(self.state, initial())
 
+    def test_pickup_missing_fees_cannot_offer_order(self):
+        quote = dict(self.quote, mode="pickup", delivery_fee=0, other_fees=0,
+                     total=self.quote["subtotal"] - self.quote["discount"])
+        for field in ("delivery_fee", "other_fees"):
+            with self.subTest(field=field):
+                incomplete = dict(quote)
+                del incomplete[field]
+                with self.assertRaises(Invalid):
+                    self.step("offer_order", quote=incomplete, payload_digest=self.payload)
+                self.assertEqual(self.state, initial())
+
     def test_all_coupon_confirmation_and_forced_refresh(self):
         offer = self.step("offer_coupons", source="fixture")
         with self.assertRaises(GateError):
@@ -52,8 +63,11 @@ class WorkflowTests(unittest.TestCase):
         self.step("coupon_result")
         with self.assertRaises(GateError):
             self.step("offer_order", quote=self.quote, payload_digest=self.payload)
+        self.now += 1
+        fresh = dict(self.quote, observed_at=self.now, expires_at=self.now + 300,
+                     response_ref="fixture-fresh-price")
         self.step("refreshed", wallet_response_ref="fixture-wallet", wallet_observed_at=self.now,
-                  quote=self.quote)
+                  quote=fresh)
         self.assertEqual(self.state["phase"], "browsing")
 
     def test_pre_claim_wallet_or_quote_cannot_refresh(self):
@@ -71,11 +85,42 @@ class WorkflowTests(unittest.TestCase):
         with self.assertRaises(GateError):
             self.step("confirm_coupons", confirmation=offer["prompt"])
 
+    def test_same_second_pre_claim_quote_cannot_refresh(self):
+        offer = self.step("offer_coupons", source="fixture")
+        self.step("confirm_coupons", confirmation=offer["prompt"])
+        self.step("coupon_result")
+        checkpoint = copy.deepcopy(self.state)
+        with self.assertRaises(GateError):
+            self.step("refreshed", wallet_response_ref="fixture-wallet-after",
+                      wallet_observed_at=self.now, quote=self.quote)
+        self.assertEqual(self.state, checkpoint)
+        with self.assertRaises(GateError):
+            self.step("offer_order", quote=self.quote, payload_digest=self.payload)
+
+    def test_same_second_refresh_requires_later_read_even_with_new_references(self):
+        offer = self.step("offer_coupons", source="fixture")
+        self.step("confirm_coupons", confirmation=offer["prompt"])
+        self.step("coupon_result")
+        completed_at = self.now
+        self.now += 1
+        checkpoint = copy.deepcopy(self.state)
+        for wallet_time, quote_time in ((completed_at, completed_at),
+                                        (completed_at, self.now), (self.now, completed_at)):
+            with self.subTest(wallet_time=wallet_time, quote_time=quote_time):
+                self.state = copy.deepcopy(checkpoint)
+                fresh = dict(self.quote, observed_at=quote_time, expires_at=quote_time + 300,
+                             response_ref="fixture-fresh-price")
+                with self.assertRaises(GateError):
+                    self.step("refreshed", wallet_response_ref="fixture-new-wallet",
+                              wallet_observed_at=wallet_time, quote=fresh)
+                self.assertEqual(self.state, checkpoint)
+
     def test_old_quote_cannot_return_after_refresh_or_reset(self):
         offer = self.step("offer_coupons", source="fixture")
         self.step("confirm_coupons", confirmation=offer["prompt"])
         self.now += 10
         self.step("coupon_result")
+        self.now += 1
         fresh = dict(self.quote, observed_at=self.now, expires_at=self.now + 300,
                      response_ref="fixture-fresh-price")
         self.step("refreshed", wallet_response_ref="fixture-wallet", wallet_observed_at=self.now,

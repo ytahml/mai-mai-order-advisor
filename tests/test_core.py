@@ -56,6 +56,32 @@ class PricingTests(unittest.TestCase):
         self.after["total"] += 1
         self.assertEqual(self.top_up()["status"], "unknown")
 
+    def test_pickup_missing_fees_are_not_inferred_from_total(self):
+        quote = dict(self.before, mode="pickup", delivery_fee=0, other_fees=0,
+                     total=self.before["subtotal"] - self.before["discount"])
+        for field in ("delivery_fee", "other_fees"):
+            with self.subTest(field=field):
+                incomplete = dict(quote)
+                del incomplete[field]
+                result = compare(quote, incomplete, self.now)
+                self.assertEqual((result["status"], result["delta"]), ("unknown", None))
+                candidate = {"id": "fixture-pickup", "quote": incomplete,
+                             "constraints_checked": True}
+                ranking = recommend([candidate], self.now)
+                self.assertEqual(ranking["excluded"], 1)
+                self.assertEqual(ranking["wallet"], [])
+                self.assertIsNone(ranking["random"])
+
+    def test_pickup_explicit_zero_fees_are_valid(self):
+        quote = dict(self.before, mode="pickup", delivery_fee=0, other_fees=0,
+                     total=self.before["subtotal"] - self.before["discount"])
+        result = compare(quote, quote, self.now)
+        self.assertEqual((result["status"], result["delta"]), ("known", 0))
+        candidate = {"id": "fixture-pickup", "quote": quote, "constraints_checked": True}
+        ranking = recommend([candidate], self.now)
+        self.assertEqual(ranking["excluded"], 0)
+        self.assertEqual(ranking["wallet"][0]["total"], quote["total"])
+
     def test_incomparable_contexts_and_sources(self):
         original = copy.deepcopy(self.after)
         for field in ("store", "mode", "fulfillment_ref", "time_slot", "currency", "source"):

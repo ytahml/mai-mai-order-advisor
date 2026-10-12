@@ -50,16 +50,19 @@ def demo():
     offer = step({"action": "offer_coupons", "source": "fixture"})
     step({"action": "confirm_coupons", "confirmation": offer["prompt"]})
     step({"action": "coupon_result"})
+    now += 1
+    refreshed_quote = dict(before, observed_at=now, expires_at=now + 300,
+                           response_ref="fixture-price-refresh")
     step({"action": "refreshed", "wallet_response_ref": "fixture-wallet-refresh",
-          "wallet_observed_at": now, "quote": before})
-    payload = digest({"simulation": True, "cart": before["cart"]})
-    offer = step({"action": "offer_order", "quote": before, "payload_digest": payload})
+          "wallet_observed_at": now, "quote": refreshed_quote})
+    payload = digest({"simulation": True, "cart": refreshed_quote["cart"]})
+    offer = step({"action": "offer_order", "quote": refreshed_quote, "payload_digest": payload})
     step({"action": "confirm_order", "confirmation": offer["prompt"]})
-    step({"action": "dispatch_order", "quote": before, "payload_digest": payload})
+    step({"action": "dispatch_order", "quote": refreshed_quote, "payload_digest": payload})
     step({"action": "create_result", "order_ref": "fixture-order"})
     verified = step({"action": "verified", "source": "fixture", "tool": "query-order",
                      "response_ref": "fixture-order-readback", "order_ref": "fixture-order",
-                     "matches_summary": True, "total": before["total"],
+                     "matches_summary": True, "total": refreshed_quote["total"],
                      "status": "pending_payment"})
     output["simulated_flow"] = trace
     output["may_show_simulated_link"] = verified["may_show_payment_link"]

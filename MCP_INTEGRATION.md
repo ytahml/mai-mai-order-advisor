@@ -4,7 +4,7 @@
 
 使用用户已配置的官方麦当劳 MCP Server：`https://mcp.mcd.cn`，Streamable HTTP，Authorization Bearer。项目本身不发 HTTP、不读取 Token；主机从 `MCD_MCP_TOKEN` 环境变量注入。占位示例见 [mcp-config.example.json](mcp-config.example.json)，**不是通用主机导入保证**：导入前确认主机支持环境变量替换，若不支持，应使用它的环境变量引用机制；不把真值写进 JSON。不输出环境变量，不将 Token 发给 Agent。
 
-2026-10-12 复核 [官方 MCP README](https://github.com/M-China/mcd-mcp-server)，版本日志最新记录为 1.0.9（2026-09-10），公开工具列表包含 `order-list`。公开 README 未提供完整 JSON Schema。本项目以 Skill 指令通过用户配置的 MCP 主机调用工具；本轮没有麦当劳 MCP 运行时，因此参数映射尚未 live-test。实际参数一律从用户主机暴露的最新 Schema 读取，尤其是餐品规格、就餐方式、费用单位和返回状态枚举。
+2026-10-12 复核 [官方 MCP README](https://github.com/M-China/mcd-mcp-server)，版本日志最新记录为 1.0.9（2026-09-10），公开工具列表包含 `order-list`。公开 README 未提供完整 JSON Schema。本项目以 Skill 指令通过用户配置的 MCP 主机调用工具；当日已完成到店自取的菜单、详情、营养和试价调用，但费用缺省语义未确认，完整报价映射未通过验收。实际参数一律从用户主机暴露的最新 Schema 读取，尤其是餐品规格、就餐方式、费用单位和返回状态枚举。
 
 ## 工具和流程
 
@@ -31,6 +31,14 @@
 4. 真人交互另行验收两道确认和读回；本次开发不执行任何真实写工具。主机消费 state 后调用相应工具；`source=fixture` 的意图禁止发到官方服务。
 
 内核没有注册成主机的工具拦截器。主机必须遵守 [SKILL.md](SKILL.md) 并保留写工具审批。流转图、取舍和失败恢复见 [设计](docs/design.md)。没有直接客户端，也没有隐藏后台任务、云服务或网络依赖。
+
+### 到店试价的费用缺省边界（2026-10-12）
+
+只读试价成功返回商品金额、优惠和总价，但未返回 `deliveryPrice`、`packingPrice`、`tablewarePrice`。当时主机 Schema 将这些字段列为可选数值；可选不等于缺省为零。当前没有固定官方适配器，规范化仍由主机在会话内完成。
+
+核查 [官方接入指南](https://open.mcd.cn/mcp/doc) 的 4.2.10、官方仓库当前及历史文档和 issues 后，尚无明确的缺省规则。指南示例虽列出餐具费，但商品额、配送费、优惠、餐具费与总价无法按本项目公式一致相加，因此也不能用该示例推导统一金额公式。出处与范围见 [官方来源记录](docs/official-sources.md#费用字段核查2026-10-12)。
+
+在得到适用当前接口版本的明确说明前，缺失费用保持 unknown；不能因到店取餐、`needTableware=false`、总价等于商品额或金额残差为零就补零。可以展示标明时间的接口返回总价，但不能把它包装成通过完整费用校验的 Quote。后续须确认缺失与显式 null 的含义、零费用的返回规则，以及 `discount` 与原价/现价费用的关系，再据此实现规范化和测试。不得混用原价商品额、现价费用与全局优惠造成重复扣减。
 
 ## 错误与数据
 
