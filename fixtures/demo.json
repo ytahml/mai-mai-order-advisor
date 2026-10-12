@@ -1,0 +1,231 @@
+{
+  "notice": "SYNTHETIC FIXTURE — NOT OFFICIAL MCP RESPONSE; all products, amounts and references are invented.",
+  "now": 1900000000,
+  "original": {
+    "source": "fixture",
+    "tool": "calculate-price",
+    "response_ref": "fixture-price-original",
+    "store": "fixture-store",
+    "store_name": "模拟门店（不存在）",
+    "mode": "delivery",
+    "fulfillment_ref": "fixture-destination",
+    "time_slot": "fixture-immediate",
+    "currency": "CNY",
+    "cart": [
+      {
+        "sku": "fixture-burger",
+        "variant": "standard",
+        "name": "模拟汉堡",
+        "quantity": 1
+      }
+    ],
+    "observed_at": 1900000000,
+    "expires_at": 1900000300,
+    "subtotal": 3000,
+    "delivery_fee": 600,
+    "other_fees": 0,
+    "discount": 0,
+    "total": 3600,
+    "coupons": []
+  },
+  "top_up_loss": {
+    "source": "fixture",
+    "tool": "calculate-price",
+    "response_ref": "fixture-price-loss",
+    "store": "fixture-store",
+    "store_name": "模拟门店（不存在）",
+    "mode": "delivery",
+    "fulfillment_ref": "fixture-destination",
+    "time_slot": "fixture-immediate",
+    "currency": "CNY",
+    "cart": [
+      {
+        "sku": "fixture-burger",
+        "variant": "standard",
+        "name": "模拟汉堡",
+        "quantity": 1
+      },
+      {
+        "sku": "fixture-side",
+        "variant": "standard",
+        "name": "模拟小食",
+        "quantity": 1
+      }
+    ],
+    "observed_at": 1900000000,
+    "expires_at": 1900000300,
+    "subtotal": 4200,
+    "delivery_fee": 600,
+    "other_fees": 0,
+    "discount": 1000,
+    "total": 3800,
+    "coupons": [
+      "fixture-coupon"
+    ]
+  },
+  "top_up_saving": {
+    "source": "fixture",
+    "tool": "calculate-price",
+    "response_ref": "fixture-price-saving",
+    "store": "fixture-store",
+    "store_name": "模拟门店（不存在）",
+    "mode": "delivery",
+    "fulfillment_ref": "fixture-destination",
+    "time_slot": "fixture-immediate",
+    "currency": "CNY",
+    "cart": [
+      {
+        "sku": "fixture-burger",
+        "variant": "standard",
+        "name": "模拟汉堡",
+        "quantity": 1
+      },
+      {
+        "sku": "fixture-side",
+        "variant": "standard",
+        "name": "模拟小食",
+        "quantity": 1
+      }
+    ],
+    "observed_at": 1900000000,
+    "expires_at": 1900000300,
+    "subtotal": 4200,
+    "delivery_fee": 0,
+    "other_fees": 0,
+    "discount": 1000,
+    "total": 3200,
+    "coupons": [
+      "fixture-coupon"
+    ]
+  },
+  "coupon_evidence": {
+    "source": "fixture",
+    "tool": "query-store-coupons",
+    "response_ref": "fixture-coupon-conditions",
+    "coupon": "fixture-coupon",
+    "threshold": 4000,
+    "conditions": "模拟条件：参与商品满40元减10元，已分别确认两车资格；配送费按各次模拟报价。",
+    "conditions_known": true,
+    "before_eligible": false,
+    "after_eligible": true
+  },
+  "candidates": [
+    {
+      "id": "A",
+      "quote": {
+        "source": "fixture",
+        "tool": "calculate-price",
+        "response_ref": "fixture-price-original",
+        "store": "fixture-store",
+        "store_name": "模拟门店（不存在）",
+        "mode": "delivery",
+        "fulfillment_ref": "fixture-destination",
+        "time_slot": "fixture-immediate",
+        "currency": "CNY",
+        "cart": [
+          {
+            "sku": "fixture-burger",
+            "variant": "standard",
+            "name": "模拟汉堡",
+            "quantity": 1
+          }
+        ],
+        "observed_at": 1900000000,
+        "expires_at": 1900000300,
+        "subtotal": 3000,
+        "delivery_fee": 600,
+        "other_fees": 0,
+        "discount": 0,
+        "total": 3600,
+        "coupons": []
+      },
+      "tags": [
+        "牛肉"
+      ],
+      "constraints_checked": true,
+      "nutrition": {
+        "source": "fixture",
+        "tool": "list-nutrition-foods",
+        "response_ref": "fixture-nutrition-A",
+        "cart_digest": "ad827808e103bb2037c48380276f4f5c84f321dd45a306f9d24b23b97a91c509",
+        "kcal": 800,
+        "protein_g": 25
+      }
+    },
+    {
+      "id": "B",
+      "quote": {
+        "source": "fixture",
+        "tool": "calculate-price",
+        "response_ref": "fixture-price-second",
+        "store": "fixture-store",
+        "store_name": "模拟门店（不存在）",
+        "mode": "delivery",
+        "fulfillment_ref": "fixture-destination",
+        "time_slot": "fixture-immediate",
+        "currency": "CNY",
+        "cart": [
+          {
+            "sku": "fixture-chicken",
+            "variant": "standard",
+            "name": "模拟鸡肉餐",
+            "quantity": 1
+          }
+        ],
+        "observed_at": 1900000000,
+        "expires_at": 1900000300,
+        "subtotal": 3400,
+        "delivery_fee": 600,
+        "other_fees": 0,
+        "discount": 0,
+        "total": 4000,
+        "coupons": []
+      },
+      "tags": [
+        "鸡肉"
+      ],
+      "constraints_checked": true,
+      "nutrition": {
+        "source": "fixture",
+        "tool": "list-nutrition-foods",
+        "response_ref": "fixture-nutrition-B",
+        "cart_digest": "7e4287e16690b6a2fb67444d31bf85f0b819896b9c29657bb2553af9a0451c07",
+        "kcal": 600,
+        "protein_g": 25
+      }
+    },
+    {
+      "id": "C",
+      "quote": {
+        "source": "fixture",
+        "tool": "calculate-price",
+        "response_ref": "fixture-price-third",
+        "store": "fixture-store",
+        "store_name": "模拟门店（不存在）",
+        "mode": "delivery",
+        "fulfillment_ref": "fixture-destination",
+        "time_slot": "fixture-immediate",
+        "currency": "CNY",
+        "cart": [
+          {
+            "sku": "fixture-unknown",
+            "variant": "standard",
+            "name": "模拟未知营养餐",
+            "quantity": 1
+          }
+        ],
+        "observed_at": 1900000000,
+        "expires_at": 1900000300,
+        "subtotal": 2800,
+        "delivery_fee": 600,
+        "other_fees": 0,
+        "discount": 0,
+        "total": 3400,
+        "coupons": []
+      },
+      "tags": [],
+      "constraints_checked": true,
+      "nutrition": null
+    }
+  ]
+}
