@@ -4,7 +4,7 @@
 
 使用用户已配置的官方麦当劳 MCP Server：`https://mcp.mcd.cn`，Streamable HTTP，Authorization Bearer。项目本身不发 HTTP、不读取 Token；主机从 `MCD_MCP_TOKEN` 环境变量注入。占位示例见 [mcp-config.example.json](mcp-config.example.json)，**不是通用主机导入保证**：导入前确认主机支持环境变量替换，若不支持，应使用它的环境变量引用机制；不把真值写进 JSON。不输出环境变量，不将 Token 发给 Agent。
 
-2026-10-12 复核 [官方 MCP README](https://github.com/M-China/mcd-mcp-server)，该 README 当前记录到 1.0.4（2026-05-21）。公开 README 仅列工具语义，未提供完整 JSON Schema。本项目以 Skill 指令通过用户配置的 MCP 主机实际调用工具；本轮没有麦当劳 MCP 运行时，因此以下工具流程和参数映射尚未 live-test。实际参数一律从用户主机暴露的最新 Schema 读取，尤其是餐品规格、就餐方式、费用单位和返回状态枚举。
+2026-10-12 复核 [官方 MCP README](https://github.com/M-China/mcd-mcp-server)，版本日志最新记录为 1.0.9（2026-09-10），公开工具列表包含 `order-list`。公开 README 未提供完整 JSON Schema。本项目以 Skill 指令通过用户配置的 MCP 主机调用工具；本轮没有麦当劳 MCP 运行时，因此参数映射尚未 live-test。实际参数一律从用户主机暴露的最新 Schema 读取，尤其是餐品规格、就餐方式、费用单位和返回状态枚举。
 
 ## 工具和流程
 
@@ -21,7 +21,7 @@
 
 普通推荐只使用读工具。绑定全部券和创建具体订单是独立授权；一次同意不能覆盖另一次。取消、退款、自动付款、商城积分兑换、创建地址不在 MVP。
 
-当前公开工具列表未列出普通到店/外送历史订单列表工具；`mall-order-list` 仅查询商城历史，`query-order` 需查询已知订单，不用于推断点餐偏好。本 Skill 不读取历史订单，口味记忆只用用户主动反馈。
+当前官方工具列表包含 `order-list`（普通到店/外送历史）；`mall-order-list` 是商城历史；`query-order` 查询已知单笔订单。`order-list` 不在当前 MVP 流程中；若未来启用，先读取主机实际 Schema，并取得用户明确授权。官方 Issue #13 报告其返回近期 10 条，但该行为尚未由本项目实测。
 
 ## Schema 适配与实时验收
 

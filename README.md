@@ -29,7 +29,7 @@ python3 -m compileall -q copilot tests scripts
 
 1. 保留本目录整体结构，将其作为名为 `mai-mai-order-advisor` 的 Skill 文件夹导入支持本地 Skill 的 Agent 主机；入口是根目录 [SKILL.md](SKILL.md)。如果主机只支持指定技能目录，由你把整个文件夹放入该主机的技能目录，不只复制 SKILL.md。也可在支持读取本地文件的主机中明确要求读取本路径 SKILL.md 并遵循它。具体技能发现方式由主机决定，本项目没有修改任何全局配置。
 2. 在主机配置官方麦当劳 MCP，连接地址 `https://mcp.mcd.cn`，Streamable HTTP。真实 Token 由你在主机本地通过环境变量 `MCD_MCP_TOKEN` 提供，不发到聊天、不放项目 `.env`、不把真值写入配置文件。
-3. [mcp-config.example.json](mcp-config.example.json) 是赛事要求的脱敏配置示例；不同主机的环境变量引用语法不同，只有主机支持替换时 `${MCD_MCP_TOKEN}` 才有效。使用前确认主机的安全注入方式，不得将真实 Token 写入配置或提交到仓库。
+3. [mcp-config.example.json](mcp-config.example.json) 是本项目附带的脱敏配置示例，便于在支持环境变量替换的主机中试用；它不是赛事必交文件。不同主机的变量引用方式可能不同，使用前确认主机的安全注入方式，不得将真实 Token 写入配置或提交到仓库。
 4. 确认主机可见当前工具 Schema，按 [MCP_INTEGRATION.md](MCP_INTEGRATION.md) 适配。启用主机对写工具的逐次审批。
 
 示例请求：

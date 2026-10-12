@@ -4,7 +4,7 @@
 
 | 来源 | 本轮确认范围 |
 | --- | --- |
-| [MCP README](https://github.com/M-China/mcd-mcp-server) | 连接地址、Streamable HTTP/Bearer、公开工具清单；截至本次核对版本日志最新 1.0.4，未见普通点餐历史列表，也未见完整 JSON Schema |
+| [MCP README](https://github.com/M-China/mcd-mcp-server) | 连接地址、Streamable HTTP/Bearer、公开工具清单包含 `order-list`；版本日志最新记录为 1.0.9（2026-09-10），未公开完整 JSON Schema |
 | [赛事 README](https://github.com/M-China/mcd-developer-innovation-challenge) | 必备文件、声明不可改、WorkBuddy 专项材料的可选范围 |
 | [声明原始文本](https://raw.githubusercontent.com/M-China/mcd-developer-innovation-challenge/main/CONTEST_DECLARATION.md) | 浏览工具返回 text/plain 的全部 22 行，逐行原文复制到根目录 CONTEST_DECLARATION.md，无添加或改写 |
 

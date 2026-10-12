@@ -59,9 +59,9 @@
 
 ## 官方事实与待验证边界
 
-2026-10-12 浏览 [MCP 官方 README](https://github.com/M-China/mcd-mcp-server) 和 [赛事 README](https://github.com/M-China/mcd-developer-innovation-challenge)。MCP README 当前版本日志最新为 1.0.4（2026-05-21）；公开工具列表没有普通点餐历史列表，故不做历史偏好挖掘。公开 README 是工具名称和语义清单，不是完整输入/输出 JSON Schema。本轮没有已连接的麦当劳 MCP，不能声称完成 Schema 或实时调用验证。
+2026-10-12 浏览 [MCP 官方 README](https://github.com/M-China/mcd-mcp-server) 和 [赛事 README](https://github.com/M-China/mcd-developer-innovation-challenge)。MCP README 版本日志最新记录为 1.0.9（2026-09-10），工具列表包含 `order-list`；当前 MVP 不使用历史订单，口味记忆来自用户主动反馈。公开 README 未提供完整输入/输出 JSON Schema。本轮没有已连接的麦当劳 MCP，不能声称完成 Schema 或实时调用验证。
 
-赛事至少要求 README.md、CONTEST_DECLARATION.md 原文、MCP_INTEGRATION.md、脱敏的 mcp-config.example.json 和可运行内容；workbuddy.md 仅参与 WorkBuddy 专项奖励时需要。声明仅在精确取得官方文件时加入；无法获得可核验原始文件则醒目标为待补。项目交付不等于报名，也不代表用户已同意声明条款。
+赛事至少要求 README.md、CONTEST_DECLARATION.md 原文、MCP_INTEGRATION.md 和项目源代码/可运行内容；`mcp-config.example.json` 是本项目为复现提供的可选示例，WorkBuddy 的专项材料仅在申请专项奖励时需要。声明仅在精确取得官方文件时加入；无法获得可核验原始文件则醒目标为待补。项目交付不等于报名，也不代表用户已同意声明条款。
 
 ## 验收策略
 
