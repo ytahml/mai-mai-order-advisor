@@ -6,9 +6,11 @@
 
 ## 60 秒真实只读结果回放
 
-[演示页面](docs/demos/readonly-2026-10-13/index.html) · [需求截图](docs/demos/readonly-2026-10-13/01-context.png) · [参考价截图](docs/demos/readonly-2026-10-13/02-reference-prices.png) · [未知信息截图](docs/demos/readonly-2026-10-13/03-unknown-fees.png)
+[直接打开并播放演示](https://imulan.top/mai-mai-order-advisor/) · [HTML 源文件](docs/demos/readonly-2026-10-13/index.html) · [需求截图](docs/demos/readonly-2026-10-13/01-context.png) · [参考价截图](docs/demos/readonly-2026-10-13/02-reference-prices.png) · [未知信息截图](docs/demos/readonly-2026-10-13/03-unknown-fees.png)
 
-下载或克隆仓库后，用浏览器打开 `docs/demos/readonly-2026-10-13/index.html`，点击“播放”。GitHub 文件页展示源码，不会直接播放 HTML。单文件可离线使用，无需 Token；支持暂停、重新开始、进度拖动和章节切换，无音轨。
+点击上方在线入口，再点“播放”，无需 Token。也可下载或克隆仓库，用浏览器打开 `docs/demos/readonly-2026-10-13/index.html` 离线播放。支持暂停、重新开始、进度拖动和章节切换，无音轨。
+
+GitHub Pages 仅发布该演示目录；`main` 上的演示内容或部署工作流变更会自动更新站点。在线版仍是固定查询快照，不连接真实点餐接口。
 
 这段演示回放 **2026-10-13 13:47–13:48（北京时间）的真实只读查询快照**，不是实时接口页面或 Codex 操作录屏。样例条件为上海同一营业门店、到店自取、一人、预算意向 40 元、偏好鸡肉；三个默认套餐均配中薯条和可乐中杯。
 
