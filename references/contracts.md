@@ -29,13 +29,27 @@ CLI 输入：`{"before": Quote, "after": Quote, "kind": "same_cart" | "top_up", 
 - `before_eligible` 必须是明确布尔值，`after_eligible` 必须 true。两车资格依据工具返回的适用范围、时间、门店及报价确定；仅知道券面金额、营销标题或简单相加达到门槛还不够。
 - `before_quote` / `after_quote` 分别为 `digest(完整 Quote)`，避免资格证据串车。
 
-输出 `status: known|unknown`。unknown 的 delta 为 null；known 的 delta 为后车实付减前车实付（含全部费用），来源随结果返回。等于零表示同支出，不等同于应该加购。
+输出 `status: known|unknown`。unknown 的 delta 为 null，不返回差额明细；`reason` 说明首个未通过的检查，金额缺项一次列出所有缺失或 null 的金额字段，非法金额仅指出字段、不回显值。known 的 delta 为后车实付减前车实付（含全部费用），来源随结果返回。等于零表示同支出，不等同于应该加购。
+
+known 还返回 `breakdown`，按 `subtotal, delivery_fee, other_fees, discount` 列出 `before, after, spend_change`（整数分）。`spend_change` 为该项对净支出的影响：费用增加为正，优惠增加为负，四项之和等于 delta。例如加购 1200 分、增加优惠 1000 分、费用不变，净支出增加 200 分。这是两份报价的算术分解，不证明某项费用变化由目标券造成。
 
 ## recommend
 
-CLI 输入 `candidates` 列表，可选 `preference: {likes: [标签], dislikes: [标签]}`、`target_kcal`（用户设定的正整数）、`budget`（分）。每个候选有 `id, quote, tags, constraints_checked: true`。硬约束由主机根据用户要求和工具数据先核实，包括人数、预算、可售、忌口与规格；标记不是内核能独立证明的事实。
+CLI 输入 `candidates` 列表，可选 `preference: {likes: [标签], dislikes: [标签]}`、`target_kcal`（用户设定的正整数）、`budget`（分）、`exclude_ids`（候选 ID 列表）。Python `recommend` 的最后一个可选参数也是 `exclude_ids`，保留原有 seed 参数位置。每个候选有 `id, quote, tags, constraints_checked: true`；主机应为同一候选维护稳定 ID。硬约束由主机根据用户要求和工具数据先核实，包括人数、预算、可售、忌口与规格；标记不是内核能独立证明的事实。
 
-可选 `nutrition`：`source, tool: list-nutrition-foods, response_ref, cart_digest: digest(quote.cart), kcal, protein_g`。仅完整匹配份量、规格和组合的值才能填；无法对应整车的营养为 null，不以同名其他规格替代。营养目标排序按与用户能量目标的绝对差，不称「最健康」。缺目标时 nutrition=null，缺营养候选单列 nutrition_unknown。口味标签来自菜单说明，likes/dislikes 仅来自用户主动反馈。输出包括三种排序、随机选择与排除数量；不宣称不同候选之间是同车优惠。
+标签、likes/dislikes 和 exclude_ids 均为非空字符串组成的列表，可传空列表。preference 须是对象，缺省或 null 表示未设置；likes/dislikes 的显式 null 或错误类型拒绝整个请求，不默默忽略用户限制。exclude_ids 缺省或 null 表示未设置，其他非列表类型拒绝整个请求。候选自身 tags 格式错误只排除该候选。标签按原字符串精确匹配，来自菜单说明；likes/dislikes 仅来自用户主动反馈。**命中 dislikes 的候选直接排除**，即使同一标签也在 likes 中。标签未命中不证明没有过敏原，仍须主机核实忌口证据。
+
+`exclude_ids` 从所有榜单及随机池中移除相应候选。用户说“再换一个”时，主机把本轮已展示的 ID 累积传入；内核不保存历史。随机仍在过滤后的钱包榜单中等概率抽取。候选耗尽返回空榜单及 random=null，解释排除原因，等用户调整条件或明确重新开始，不自动清空排除列表或放宽预算。
+
+可选 `nutrition`：`source, tool: list-nutrition-foods, response_ref, cart_digest: digest(quote.cart), kcal, protein_g`。仅完整匹配份量、规格和组合的值才能填；无法对应整车的营养为 null，不以同名其他规格替代。营养目标排序按与用户能量目标的绝对差，不称「最健康」。缺目标时 nutrition=null，缺营养候选单列 nutrition_unknown。
+
+输出保留三种排序、random、excluded（数量）及 nutrition_unknown，并增加：
+
+- `excluded_details: [{index, reason}]`：index 是输入 candidates 的零基下标，reason 是该候选首个失败检查，例如缺费用、超预算、命中不喜欢标签、已展示或上下文不同；格式错误不回显原始输入。
+- 每张卡保留 id、total、kcal、protein_g、taste_score、source，并带门店、方式、预约时段、币种、商品规格数量、应用券、报价引用与观测/失效时间；`includes_all_fees=true` 表示通过本地完整报价校验。
+- `matched_likes` 是去重排序后的喜好匹配标签，taste_score 为其数量；`budget_remaining` 是预算减实付，未设预算为 null；`kcal_distance` 是与用户热量目标的绝对差，缺目标或缺营养为 null。
+
+主机用这些字段解释每种选择，不把不同候选之间的价差说成同车用券节省。营养目标是排序偏好，不是热量上限。排序卡片不包含完整 Quote，创建订单仍须提供原始完整报价并走交易闸门。
 
 ## 交易状态机
 

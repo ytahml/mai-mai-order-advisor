@@ -36,6 +36,11 @@ def demo():
               "top_up_saving": compare(before, data["top_up_saving"], now, "top_up",
                                        top_up_evidence(data, data["top_up_saving"])),
               "missing_conditions": compare(before, data["top_up_loss"], now, "top_up")}
+    output["recommendations_after_feedback"] = recommend(
+        data["candidates"], now, {"likes": ["鸡肉"], "dislikes": ["牛肉"]},
+        target_kcal=600, budget=4000, seed=1024, exclude_ids=["C"])
+    output["missing_fees"] = compare(before, dict(data["top_up_loss"], delivery_fee=None,
+                                                other_fees=None), now, "top_up")
     state = initial()
     trace = []
 
@@ -83,7 +88,8 @@ def main():
                                  data.get("kind", "same_cart"), data.get("evidence"))
             elif command == "recommend":
                 result = recommend(data["candidates"], now, data.get("preference"),
-                                   data.get("target_kcal"), data.get("budget"))
+                                   data.get("target_kcal"), data.get("budget"),
+                                   exclude_ids=data.get("exclude_ids"))
             else:
                 result = transition(data.get("state", initial()), data["event"], now)
         else:

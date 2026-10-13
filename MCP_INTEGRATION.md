@@ -26,7 +26,7 @@
 ## Schema 适配与实时验收
 
 1. 在主机确认官方服务连接和 tools/list 可见，不读取已有凭据文件。逐个确认工具名、必填字段、枚举、嵌套商品结构、时间与金额单位及错误格式；仅从 Schema/实际响应取参数。
-2. 按 [内部契约](references/contracts.md) 将响应映射为 Quote / CouponEvidence。缺失/无法解释字段保持 unknown；不得填猜测值。只在工具明确无其他费用时填 other_fees=0。真实数据保留在私密会话，不生成 fixture。
+2. 按 [内部契约](references/contracts.md) 将响应映射为 Quote / CouponEvidence。缺失/无法解释字段保持 unknown；不得填猜测值。只在工具明确无其他费用时填 other_fees=0。内核的 reason / excluded_details 会指出缺失金额字段，按这些提示补查依据；这不是官方费用映射器，也不验证缺省语义。真实数据保留在私密会话，不生成 fixture。
 3. 先执行只读路径验证门店、商品、券、完整报价及营养映射。未取得完整资格条件时，演示 unknown 是正确行为。
 4. 真人交互另行验收两道确认和读回；本次开发不执行任何真实写工具。主机消费 state 后调用相应工具；`source=fixture` 的意图禁止发到官方服务。
 

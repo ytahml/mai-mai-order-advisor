@@ -2,7 +2,7 @@ import copy
 import unittest
 
 from copilot.__main__ import fixture, top_up_evidence
-from copilot.core import compare, digest, recommend
+from copilot.core import Invalid, compare, digest, recommend
 
 
 class PricingTests(unittest.TestCase):
@@ -24,6 +24,38 @@ class PricingTests(unittest.TestCase):
     def test_delivery_fee_changes_verdict(self):
         result = self.top_up(self.data["top_up_saving"])
         self.assertEqual((result["verdict"], result["delta"]), ("lower_spend", -400))
+
+    def test_breakdown_explains_net_spend_including_discount_sign(self):
+        result = self.top_up(self.data["top_up_saving"])
+        changes = {field: row["spend_change"] for field, row in result["breakdown"].items()}
+        self.assertEqual(changes, {"subtotal": 1200, "delivery_fee": -600,
+                                   "other_fees": 0, "discount": -1000})
+        self.assertEqual(sum(changes.values()), result["delta"])
+        self.assertEqual(result["breakdown"]["delivery_fee"],
+                         {"before": 600, "after": 0, "spend_change": -600})
+
+    def test_breakdown_covers_added_fees_and_reduced_discount(self):
+        self.before.update(discount=500, total=3100)
+        after = dict(self.before, discount=200, other_fees=100, total=3500)
+        result = compare(self.before, after, self.now)
+        self.assertEqual(result["breakdown"]["discount"]["spend_change"], 300)
+        self.assertEqual(result["breakdown"]["other_fees"]["spend_change"], 100)
+        self.assertEqual(sum(row["spend_change"] for row in result["breakdown"].values()), 400)
+
+    def test_missing_fees_report_all_gaps_without_partial_savings(self):
+        del self.after["delivery_fee"]
+        self.after["other_fees"] = None
+        result = self.top_up()
+        self.assertEqual(result["reason"], "missing quote amounts: delivery_fee, other_fees")
+        self.assertEqual(result["status"], "unknown")
+        self.assertIsNone(result["delta"])
+        self.assertNotIn("breakdown", result)
+
+    def test_invalid_amount_names_field_without_echoing_value(self):
+        self.after["delivery_fee"] = "SYNTHETIC-PRIVATE-INPUT"
+        result = self.top_up()
+        self.assertEqual(result["reason"], "invalid quote amount: delivery_fee")
+        self.assertNotIn("SYNTHETIC-PRIVATE-INPUT", str(result))
 
     def test_equal_spend(self):
         self.after.update(discount=1200, total=3600)
@@ -139,6 +171,88 @@ class RecommendationTests(unittest.TestCase):
         self.assertEqual(result["taste"][0]["id"], "B")
         self.assertEqual(result["nutrition_unknown"], ["C"])
         self.assertIsNone(result["wallet"][0]["kcal"])
+
+    def test_dislikes_are_excluded_from_every_choice(self):
+        result = self.rank(preference={"likes": ["鸡肉"], "dislikes": ["鸡肉"]},
+                           target_kcal=600, seed=1024)
+        for ranking in ("wallet", "nutrition", "taste"):
+            self.assertNotIn("B", [item["id"] for item in result[ranking]])
+        self.assertNotEqual(result["random"]["id"], "B")
+        self.assertEqual(result["excluded"], 1)
+        self.assertEqual(result["excluded_details"], [{"index": 1, "reason": "matches disliked tags"}])
+
+    def test_reroll_excludes_shown_candidates_without_relaxing_constraints(self):
+        shown = []
+        for _ in range(2):
+            result = self.rank(budget=3600, exclude_ids=shown, seed=1024)
+            choice = result["random"]
+            self.assertNotIn(choice["id"], shown)
+            self.assertLessEqual(choice["total"], 3600)
+            shown.append(choice["id"])
+        result = self.rank(budget=3600, exclude_ids=shown)
+        self.assertEqual(result["wallet"], [])
+        self.assertIsNone(result["random"])
+        self.assertEqual(result["excluded"], 3)
+        self.assertEqual({row["reason"] for row in result["excluded_details"]},
+                         {"over budget", "candidate excluded by user or already shown"})
+
+    def test_cards_explain_price_taste_nutrition_and_source(self):
+        original = copy.deepcopy(self.data)
+        result = self.rank(preference={"likes": ["鸡肉", "鸡肉"]}, target_kcal=650, budget=4000)
+        card = result["taste"][0]
+        self.assertEqual(card["id"], "B")
+        self.assertEqual(card["matched_likes"], ["鸡肉"])
+        self.assertEqual(card["taste_score"], 1)
+        self.assertEqual(card["kcal_distance"], 50)
+        self.assertEqual(card["budget_remaining"], 0)
+        self.assertTrue(card["includes_all_fees"])
+        self.assertEqual(card["cart"][0]["name"], "模拟鸡肉餐")
+        self.assertEqual(card["source"], "fixture")
+        self.assertEqual(card["response_ref"], "fixture-price-second")
+        self.assertEqual(card["observed_at"], self.data["now"])
+        self.assertIsNone(result["wallet"][0]["kcal_distance"])
+        card["cart"][0]["quantity"] = 99
+        self.assertEqual(self.data, original)
+
+    def test_unset_targets_do_not_invent_reasons(self):
+        card = self.rank()["wallet"][0]
+        self.assertEqual(card["matched_likes"], [])
+        self.assertIsNone(card["budget_remaining"])
+        self.assertIsNone(card["kcal_distance"])
+
+    def test_exclusion_diagnostics_preserve_input_indexes_and_hide_malformed_data(self):
+        candidates = self.data["candidates"]
+        candidates[0]["quote"]["delivery_fee"] = None
+        candidates[1]["constraints_checked"] = False
+        candidates.append("SYNTHETIC-PRIVATE-INPUT")
+        result = self.rank()
+        self.assertEqual(result["excluded_details"], [
+            {"index": 0, "reason": "missing quote amounts: delivery_fee"},
+            {"index": 1, "reason": "hard constraints not checked"},
+            {"index": 3, "reason": "malformed candidate"}])
+        self.assertNotIn("SYNTHETIC-PRIVATE-INPUT", str(result))
+        self.assertEqual(result["random"]["id"], "C")
+
+    def test_malformed_preferences_and_exclusions_fail_instead_of_being_ignored(self):
+        cases = [{"preference": []}, {"preference": False},
+                 {"preference": {"likes": "鸡肉"}}, {"preference": {"dislikes": None}},
+                 {"preference": {"dislikes": [""]}}, {"preference": {"likes": [{}]}},
+                 {"exclude_ids": "A"}, {"exclude_ids": [None]}]
+        for kwargs in cases:
+            with self.subTest(kwargs=kwargs), self.assertRaises(Invalid):
+                self.rank(**kwargs)
+
+    def test_recommend_requires_list_and_valid_clock_even_with_no_candidates(self):
+        with self.assertRaises(Invalid):
+            recommend({}, self.data["now"])
+        with self.assertRaises(Invalid):
+            recommend([], True)
+
+    def test_disliked_candidate_does_not_choose_store_context(self):
+        self.data["candidates"][0]["quote"]["store"] = "fixture-other-store"
+        result = self.rank(preference={"dislikes": ["牛肉"]})
+        self.assertEqual(result["excluded"], 1)
+        self.assertEqual(len(result["wallet"]), 2)
 
     def test_no_target_means_no_nutrition_ranking(self):
         self.assertIsNone(self.rank()["nutrition"])
