@@ -1,5 +1,6 @@
 """Internal data contract, not an official MCP response schema."""
 
+from copy import deepcopy
 import hashlib
 import json
 import random
@@ -24,6 +25,12 @@ def integer(value, minimum=0):
 def required_text(value):
     if not isinstance(value, str) or not value.strip():
         raise Invalid("missing text evidence")
+    return value
+
+
+def text_list(value):
+    if not isinstance(value, list) or any(not isinstance(v, str) or not v.strip() for v in value):
+        raise Invalid("expected a list of nonempty strings")
     return value
 
 
@@ -63,8 +70,16 @@ def validate_quote(quote, now):
     end = integer(quote.get("expires_at"))
     if not start <= now < end or end - start > 300:
         raise Invalid("quote expired or invalid freshness window")
-    amounts = [integer(quote.get(k)) for k in
-               ("subtotal", "delivery_fee", "other_fees", "discount", "total")]
+    fields = ("subtotal", "delivery_fee", "other_fees", "discount", "total")
+    missing = [k for k in fields if quote.get(k) is None]
+    if missing:
+        raise Invalid("missing quote amounts: " + ", ".join(missing))
+    amounts = []
+    for field in fields:
+        try:
+            amounts.append(integer(quote[field]))
+        except Invalid:
+            raise Invalid("invalid quote amount: " + field) from None
     subtotal, delivery, other, discount, total = amounts
     if subtotal + delivery + other - discount != total:
         raise Invalid("inconsistent total")
@@ -129,7 +144,11 @@ def compare(before, after, now, kind="same_cart", evidence=None):
         "higher_spend" if delta > 0 else "lower_spend" if delta < 0 else "same_spend")
     return {"status": "known", "verdict": verdict, "delta": delta,
             "before_total": before["total"], "after_total": after["total"],
-            "source": before["source"], "includes_all_fees": True}
+            "source": before["source"], "includes_all_fees": True,
+            "breakdown": {field: {"before": before[field], "after": after[field],
+                                  "spend_change": (after[field] - before[field]) * sign}
+                          for field, sign in (("subtotal", 1), ("delivery_fee", 1),
+                                              ("other_fees", 1), ("discount", -1))}}
 
 
 def nutrition_value(candidate, field):
@@ -147,19 +166,30 @@ def nutrition_value(candidate, field):
     return value if type(value) is int and value >= 0 else None
 
 
-def recommend(candidates, now, preference=None, target_kcal=None, budget=None, seed=None):
+def recommend(candidates, now, preference=None, target_kcal=None, budget=None, seed=None,
+              exclude_ids=None):
     """Rank prefiltered feasible carts. No menu generation or medical inference."""
-    preference = preference or {"likes": [], "dislikes": []}
+    integer(now)
+    if not isinstance(candidates, list):
+        raise Invalid("candidates must be a list")
+    preference = {} if preference is None else preference
+    if not isinstance(preference, dict):
+        raise Invalid("preference must be an object")
+    likes = set(text_list(preference.get("likes", [])))
+    dislikes = set(text_list(preference.get("dislikes", [])))
+    excluded_ids = set(text_list([] if exclude_ids is None else exclude_ids))
     if target_kcal is not None:
         integer(target_kcal, 1)
     if budget is not None:
         integer(budget)
-    valid, excluded = [], 0
+    valid, excluded = [], []
     base = None
-    for item in candidates:
+    for index, item in enumerate(candidates):
         try:
             q = validate_quote(item.get("quote"), now)
             required_text(item.get("id"))
+            if item["id"] in excluded_ids:
+                raise Invalid("candidate excluded by user or already shown")
             if item.get("constraints_checked") is not True:
                 raise Invalid("hard constraints not checked")
             if budget is not None and q["total"] > budget:
@@ -167,18 +197,25 @@ def recommend(candidates, now, preference=None, target_kcal=None, budget=None, s
             key = (context(q), q["source"])
             if base is not None and base != key:
                 raise Invalid("candidate context differs")
-            tags = item.get("tags", [])
-            if not isinstance(tags, list) or any(not isinstance(t, str) for t in tags):
-                raise Invalid("invalid taste tags")
-            score = len(set(tags) & set(preference.get("likes", [])))
-            score -= len(set(tags) & set(preference.get("dislikes", [])))
-            valid.append({"id": item["id"], "total": q["total"],
-                          "kcal": nutrition_value(item, "kcal"),
+            tags = set(text_list(item.get("tags", [])))
+            if tags & dislikes:
+                raise Invalid("matches disliked tags")
+            matched_likes = sorted(tags & likes)
+            kcal = nutrition_value(item, "kcal")
+            valid.append({"id": item["id"], "total": q["total"], "kcal": kcal,
                           "protein_g": nutrition_value(item, "protein_g"),
-                          "taste_score": score, "source": q["source"]})
+                          "taste_score": len(matched_likes), "matched_likes": matched_likes,
+                          "budget_remaining": None if budget is None else budget - q["total"],
+                          "kcal_distance": (None if target_kcal is None or kcal is None
+                                            else abs(kcal - target_kcal)),
+                          "source": q["source"], "includes_all_fees": True,
+                          **{k: deepcopy(q[k]) for k in ("store", "store_name", "mode", "time_slot",
+                                                        "currency", "cart", "coupons", "observed_at",
+                                                        "expires_at", "response_ref")}})
             base = key
-        except (Invalid, KeyError, TypeError, AttributeError):
-            excluded += 1
+        except (Invalid, KeyError, TypeError, AttributeError) as exc:
+            reason = str(exc) if isinstance(exc, Invalid) else "malformed candidate"
+            excluded.append({"index": index, "reason": reason})
     wallet = sorted(valid, key=lambda v: (v["total"], v["id"]))
     taste = sorted(valid, key=lambda v: (-v["taste_score"], v["total"], v["id"]))
     nutrition = None if target_kcal is None else sorted(
@@ -186,6 +223,6 @@ def recommend(candidates, now, preference=None, target_kcal=None, budget=None, s
         key=lambda v: (abs(v["kcal"] - target_kcal), v["total"], v["id"]))
     return {"wallet": wallet, "nutrition": nutrition, "taste": taste,
             "random": random.Random(seed).choice(wallet) if wallet else None,
-            "excluded": excluded, "nutrition_unknown": [v["id"] for v in valid
-                                                         if v["kcal"] is None],
+            "excluded": len(excluded), "excluded_details": excluded,
+            "nutrition_unknown": [v["id"] for v in valid if v["kcal"] is None],
             "nutrition_rule": "distance_to_user_kcal_target" if target_kcal else "unknown"}
