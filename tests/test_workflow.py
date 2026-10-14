@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from copilot.__main__ import fixture
+from copilot.demo import fixture
 from copilot.core import Invalid, digest
 from copilot.workflow import GateError, initial, transition
 

@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from copilot.__main__ import fixture, top_up_evidence
+from copilot.demo import fixture, top_up_evidence
 from copilot.core import Invalid, compare, digest, recommend
 
 
