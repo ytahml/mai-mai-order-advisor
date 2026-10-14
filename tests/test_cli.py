@@ -5,7 +5,7 @@ import sys
 import time
 import unittest
 
-from copilot.__main__ import fixture
+from copilot.demo import fixture
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -15,6 +15,16 @@ class CliTests(unittest.TestCase):
     def run_cli(self, command, data=""):
         return subprocess.run([sys.executable, "-m", "copilot", command], input=data,
                               text=True, capture_output=True, cwd=ROOT, check=False)
+
+    def test_help_and_invalid_arguments(self):
+        for args in ([], ["help"], ["-h"], ["--help"], ["unknown"], ["demo", "extra"]):
+            with self.subTest(args=args):
+                result = subprocess.run([sys.executable, "-m", "copilot", *args],
+                                        text=True, capture_output=True, cwd=ROOT, check=False)
+                invalid = args in (["unknown"], ["demo", "extra"])
+                self.assertEqual(result.returncode, 2 if invalid else 0)
+                self.assertIn("Commands:", result.stderr if invalid else result.stdout)
+                self.assertEqual(result.stdout if invalid else result.stderr, "")
 
     def test_offline_demo_end_to_end(self):
         result = self.run_cli("demo")
